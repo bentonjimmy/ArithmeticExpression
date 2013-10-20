@@ -2,17 +2,22 @@ package edu.njit.cs610.code;
 
 public class BinaryTree<K extends Comparable<K>, V> {
 
-	BinaryTree()
+	public BinaryTree()
 	{
 		root = null;
 		size = 0;
+	}
+	
+	public int size()
+	{
+		return size;
 	}
 	
 	public void insert(K k, V v)
 	{
 		if(root == null) //Nothing in the tree
 		{
-			root = new Node<K, V>(k, v);
+			root = new Node(k, v);
 		}
 		else //At least a root
 		{
@@ -21,26 +26,36 @@ public class BinaryTree<K extends Comparable<K>, V> {
 		size++; //Increase size by 1
 	}
 	
-	protected void insertNode(Node<K, V> n, K k, V v)
+	protected void insertNode(Node n, K k, V v)
 	{
-		if(n == null)
+		if(n.key.compareTo(k) > 0) //assume to be greater than
 		{
-			n = new Node<K, V>(k,v);
-		}
-		else
-		{
-			if(n.key.compareTo(k) < 0) //assume to be greater than
+			n.sizeLeftST++;
+			if(n.leftChild == null)
+			{
+				n.leftChild = new Node(k, v);
+			}
+			else
 			{
 				insertNode(n.leftChild, k, v);
 			}
-			else if(n.key.compareTo(k) > 0) //assume to be less than
+		}
+		else if(n.key.compareTo(k) < 0) //assume to be less than
+		{
+			n.sizeRightST++;
+			if(n.rightChild == null)
+			{
+				n.rightChild = new Node(k, v);
+			}
+			else
 			{
 				insertNode(n.rightChild, k, v);
 			}
-			else //equal key values
-			{
-				n = new Node<K, V>(k, v);
-			}
+		}
+		else //equal key values
+		{
+			//Already in the tree
+			//n = new Node(k, v);
 		}
 	}
 	
@@ -52,12 +67,12 @@ public class BinaryTree<K extends Comparable<K>, V> {
 		}
 		else //search the nodes
 		{
-			Node<K,V> temp = findNode(root, k);
+			Node temp = findNode(root, k);
 			return temp.value;
 		}
 	}
 	
-	protected Node<K,V> findNode(Node<K,V> n, K k)
+	protected Node findNode(Node n, K k)
 	{
 		if(n == null)//Not found
 		{
@@ -65,99 +80,144 @@ public class BinaryTree<K extends Comparable<K>, V> {
 		}
 		else
 		{
-			if(n.key.compareTo(k) < 0) //assume to be greater than
+			if(n.key.compareTo(k) > 0) //assume to be greater than
 			{
-				findNode(n.leftChild, k);
+				return findNode(n.leftChild, k);
 			}
-			else if(n.key.compareTo(k) > 0) //assume to be less than
+			else if(n.key.compareTo(k) < 0) //assume to be less than
 			{
-				findNode(n.rightChild, k);
+				return findNode(n.rightChild, k);
 			}
 			else //equal key values
 			{
 				return n;
 			}
 		}
-		return null;
 	}
 	
 	public void remove(K k)
 	{
-		if(root == null)
+		if(root != null)
 		{
-			//nothing in tree to delete
-		}
-		else
-		{
-			Node<K,V> delete = findNode(root, k);
+			Node delete = findNode(root, k);
 			if(delete != null) //A node was found and can be removed from the tree
 			{
-				Node<K,V> parent = findParent(root, k);
 				if(delete.leftChild == null && delete.rightChild == null) //no children
 				{
-					if(parent.leftChild.key.compareTo(delete.key) == 0) //it's parents left child
-					{
-						parent.leftChild = null;
-					}
-					else//it's the parents right child
-					{
-						parent.rightChild = null;
-					}
+					delete = null; //Replaces the delete node with a null value
 				}
 				else if(delete.leftChild == null) //only has a right child value
 				{
-					if(parent.leftChild.key.compareTo(delete.key) == 0) //it's parents left child
-					{
-						parent.leftChild = delete.rightChild;
-					}
-					else//it's the parents right child
-					{
-						parent.rightChild = delete.rightChild;
-					}
+					delete = delete.rightChild;
+					//replaceNode(delete, delete.rightChild);
 				}
 				else if(delete.rightChild == null) //only has a left child value
 				{
-					if(parent.leftChild.key.compareTo(delete.key) == 0) //it's parents left child
-					{
-						parent.leftChild = delete.leftChild;
-					}
-					else//it's the parents right child
-					{
-						parent.rightChild = delete.leftChild;
-					}
+					delete = delete.leftChild;
+					//replaceNode(delete, delete.leftChild);
 				}
 				else //has two children
 				{
+					Node rm;
 					/*
 					 * Find either the right most node in left subtree
 					 * or left most node in right subtree
 					 */
+					if(delete.sizeLeftST > delete.sizeRightST)
+					{
+						rm = findRightMost(delete.leftChild);
+					}
+					else
+					{
+						rm = findLeftMost(delete.rightChild);
+					}
+					replaceNode(delete, rm);
 				}
+				size--;
 			}
 		}
 	}
 	
-	protected Node<K,V> findParent(Node<K,V> n, K k)
+	protected Node findRightMost(Node n)
 	{
-		if(n.leftChild.key.compareTo(k) == 0 || n.rightChild.key.compareTo(k) == 0) 
+		while(n.rightChild != null)
 		{
-			return n;
+			n = n.rightChild;
 		}
-		else if(n.key.compareTo(k) < 0) //assume to be greater than
+		return n;
+	}
+	
+	protected Node findLeftMost(Node n)
+	{
+		while(n.leftChild != null)
 		{
-			findParent(n.leftChild, k);
+			n = n.leftChild;
 		}
-		else //assume to be less than
+		return n;
+	}
+	
+	protected Node findParent(Node n, Node child)
+	{
+		if(child == root)
 		{
-			findParent(n.rightChild, k);
+			return root;
+		}
+		else
+		{
+			if(n.leftChild.key.compareTo(child.key) == 0 || n.rightChild.key.compareTo(child.key) == 0) 
+			{
+				return n;
+			}
+			else if(n.key.compareTo(child.key) > 0) //Go to the left
+			{
+				findParent(n.leftChild, child);
+			}
+			else  //Go to the right
+			{
+				findParent(n.rightChild, child);
+			}
 		}
 		return null;
 	}
 	
-	private Node<K, V> root;
+	protected void replaceNode(Node target, Node replacement)
+	{
+		//Node parent = findParent(root, target);
+		target.key = replacement.key;
+		target.value = replacement.value;
+		if(replacement.rightChild == null) //target is the right-most child
+		{
+			replacement = replacement.leftChild;
+		}
+		else //target is the left-most child
+		{
+			replacement = replacement.rightChild;
+		}
+		
+	}
+	
+	public void printInOrder()
+	{
+		printInOrder(root);
+	}
+	
+	protected void printInOrder(Node n)
+	{
+		if(n.leftChild != null)
+		{
+			printInOrder(n.leftChild);
+		}
+		System.out.print(n.value + " ");
+		if(n.rightChild != null)
+		{
+			printInOrder(n.rightChild);
+		}
+	}
+	
+	private Node root;
 	private int size;
 	
-	private class Node<K, V>
+	private class Node
 	{
 		private Node(K k, V v)
 		{
@@ -165,11 +225,15 @@ public class BinaryTree<K extends Comparable<K>, V> {
 			key = k;
 			leftChild = null;
 			rightChild = null;
+			sizeLeftST = 0;
+			sizeRightST = 0;
 		}
 		
 		private K key;
 		private V value;
-		private Node<K,V> leftChild;
-		private Node<K,V> rightChild;
+		private Node leftChild;
+		private Node rightChild;
+		private int sizeLeftST;
+		private int sizeRightST;
 	}
 }
