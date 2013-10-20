@@ -68,7 +68,14 @@ public class BinaryTree<K extends Comparable<K>, V> {
 		else //search the nodes
 		{
 			Node temp = findNode(root, k);
-			return temp.value;
+			if(temp != null)
+			{
+				return temp.value;
+			}
+			else
+			{
+				return null;
+			}
 		}
 	}
 	
@@ -95,63 +102,151 @@ public class BinaryTree<K extends Comparable<K>, V> {
 		}
 	}
 	
-	public void remove(K k)
+	protected void replaceNode(Node parent, Node delete, String direction)
 	{
-		if(root != null)
+		if(delete.leftChild == null && delete.rightChild == null) //no children in Node that will be removed
 		{
-			Node delete = findNode(root, k);
-			if(delete != null) //A node was found and can be removed from the tree
+			if(delete == root)
 			{
-				if(delete.leftChild == null && delete.rightChild == null) //no children
-				{
-					delete = null; //Replaces the delete node with a null value
-				}
-				else if(delete.leftChild == null) //only has a right child value
-				{
-					delete = delete.rightChild;
-					//replaceNode(delete, delete.rightChild);
-				}
-				else if(delete.rightChild == null) //only has a left child value
-				{
-					delete = delete.leftChild;
-					//replaceNode(delete, delete.leftChild);
-				}
-				else //has two children
-				{
-					Node rm;
-					/*
-					 * Find either the right most node in left subtree
-					 * or left most node in right subtree
-					 */
-					if(delete.sizeLeftST > delete.sizeRightST)
-					{
-						rm = findRightMost(delete.leftChild);
-					}
-					else
-					{
-						rm = findLeftMost(delete.rightChild);
-					}
-					replaceNode(delete, rm);
-				}
-				size--;
+				root = null;
+			}
+			else if(direction.equals("left")) 
+			{
+				parent.leftChild = null;//Replaces the delete node with a null value
+				//maybe make delete = null also
+			}
+			else
+			{
+				parent.rightChild = null;//Replaces the delete node with a null value
+			}
+		}
+		else if(delete.leftChild == null) //only has a right child value
+		{
+			if(delete == root)
+			{
+				root = delete.rightChild;
+			}
+			else if(direction.equals("left")) 
+			{
+				parent.leftChild = delete.rightChild;//Bring up right child
+			}
+			else
+			{
+				parent.rightChild = delete.rightChild;//Bring up right child
+			}
+		}
+		else if(delete.rightChild == null) //only has a left child value
+		{
+			if(delete == root)
+			{
+				root = delete.leftChild;
+			}
+			else if(direction.equals("left")) 
+			{
+				parent.leftChild = delete.leftChild;//Bring up left child
+			}
+			else
+			{
+				parent.rightChild = delete.leftChild;//Bring up left child
+			}
+		}
+		else //has two children
+		{
+			Node rm;
+			/*
+			 * Find either the right most node in left subtree
+			 * or left most node in right subtree
+			 */
+			if(delete.sizeLeftST > delete.sizeRightST)
+			{
+				rm = findRightMost(delete, delete.leftChild);
+			}
+			else
+			{
+				rm = findLeftMost(delete, delete.rightChild);
+			}
+
+			delete.key = rm.key;
+			delete.value = rm.value;
+		}
+		size--;
+	}
+	
+	protected void remove(Node n, K k)
+	{
+		if(n.key.compareTo(k) > 0)
+		{
+			if(n.leftChild.key != k) 
+			{
+				remove(n.leftChild, k);
+			}
+			else //value in the child matches k
+			{
+				replaceNode(n, n.leftChild, "left");
+			}
+		}
+		else if(n.key.compareTo(k) < 0)
+		{
+			if(n.rightChild.key != k) 
+			{
+				remove(n.rightChild, k);
+			}
+			else //value in the child matches k
+			{
+				replaceNode(n, n.rightChild, "right");
 			}
 		}
 	}
 	
-	protected Node findRightMost(Node n)
+	public void remove(K k)
 	{
+		if(root != null)
+		{
+			if(root.key != k)
+			{
+				remove(root, k);
+			}
+			else //root is to be deleted
+			{
+				replaceNode(root, root, "left");
+			}
+		}
+	}
+	
+	protected Node findRightMost(Node parent, Node n)
+	{
+		Node p = n;
 		while(n.rightChild != null)
 		{
+			p = n;
 			n = n.rightChild;
+		}
+		if(parent.leftChild == n)
+		{
+			parent.leftChild = n.leftChild;
+		}
+		else
+		{
+			p.rightChild = n.leftChild;
 		}
 		return n;
 	}
 	
-	protected Node findLeftMost(Node n)
+	protected Node findLeftMost(Node parent, Node n)
 	{
+		Node p = parent;
 		while(n.leftChild != null)
 		{
+			p = n;
 			n = n.leftChild;
+		}
+		if(parent.rightChild == n)
+		{
+			parent.rightChild = n.rightChild;
+		}
+		else
+		{
+			p.leftChild = n.rightChild;
 		}
 		return n;
 	}
@@ -170,16 +265,16 @@ public class BinaryTree<K extends Comparable<K>, V> {
 			}
 			else if(n.key.compareTo(child.key) > 0) //Go to the left
 			{
-				findParent(n.leftChild, child);
+				return findParent(n.leftChild, child);
 			}
 			else  //Go to the right
 			{
-				findParent(n.rightChild, child);
+				return findParent(n.rightChild, child);
 			}
 		}
-		return null;
 	}
 	
+	/*
 	protected void replaceNode(Node target, Node replacement)
 	{
 		//Node parent = findParent(root, target);
@@ -195,10 +290,12 @@ public class BinaryTree<K extends Comparable<K>, V> {
 		}
 		
 	}
+	*/
 	
 	public void printInOrder()
 	{
 		printInOrder(root);
+		System.out.print("\n");
 	}
 	
 	protected void printInOrder(Node n)
