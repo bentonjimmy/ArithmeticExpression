@@ -13,6 +13,11 @@ public class BinaryTree<K extends Comparable<K>, V> {
 		return size;
 	}
 	
+	public Node getRoot()
+	{
+		return root;
+	}
+	
 	public void insert(K k, V v)
 	{
 		if(root == null) //Nothing in the tree
